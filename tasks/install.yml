@@ -1,0 +1,53 @@
+- name: find fastest apache mirror
+  uri:
+    url: https://www.apache.org/dyn/closer.cgi?as_json=1
+    method: GET
+  register: fastest_mirror
+
+- name: download apache hadoop {{ hadoop_version }} tarball
+  get_url:
+    url: "{{ fastest_mirror.json.preferred }}hadoop/common/hadoop-{{ hadoop_version }}/hadoop-{{ hadoop_version }}.tar.gz"
+    dest: /opt/hadoop-{{ hadoop_version }}.tar.gz
+  register: download_result
+  until: download_result is success
+  retries: 5
+  delay: 2
+
+- name: unarchive apache hadoop {{ hadoop_version }} tarball
+  unarchive:
+    src: /opt/hadoop-{{ hadoop_version }}.tar.gz
+    dest: /opt
+    creates: /opt/hadoop-{{ hadoop_version }}
+    owner: "{{ hadoop_user.name }}"
+    copy: no
+
+- name: link default /opt/hadoop folder
+  file:
+    dest: /opt/hadoop
+    src: /opt/hadoop-{{ hadoop_version }}
+    state: link
+    owner: "{{ hadoop_user.name }}"
+
+- name: link hadoop_home folder if defined
+  file:
+    dest: "{{ hadoop_home }}"
+    src: /opt/hadoop-{{ hadoop_version }}
+    state: link
+    owner: "{{ hadoop_user.name }}"
+  when: hadoop_home is defined
+
+- name: set hadoop_home variable if not defined
+  set_fact:
+    hadoop_home: "/opt/hadoop-{{ hadoop_version }}"
+  when: hadoop_home is not defined
+
+- name: set hadoop_home environment variable to /etc/profile
+  lineinfile:
+    path: /etc/profile
+    regexp: '^export HADOOP_HOME='
+    line: "export HADOOP_HOME={{ hadoop_home }}"
+
+- name: create file hadoop-env.sh
+  template:
+    src: hadoop-env.sh.j2
+    dest: "{{ hadoop_home }}/etc/hadoop/hadoop-env.sh"

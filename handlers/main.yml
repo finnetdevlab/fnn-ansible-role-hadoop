@@ -1,2 +1,27 @@
 ---
-# handlers file for fnn-ansible-role-hadoop
+- name: stop pseudo hdfs
+  action: shell {{ hadoop_home }}/sbin/stop-dfs.sh
+  become: yes
+  become_user: hdfs
+  listen: stop pseudo hdfs
+
+- name: format hdfs
+  action: shell {{ hadoop_home }}/bin/hdfs namenode -format
+  become: yes
+  become_user: hdfs
+  listen: format hdfs
+
+- name: start pseudo hdfs
+  action: shell {{ hadoop_home }}/sbin/start-dfs.sh
+  become: yes
+  become_user: hdfs
+  listen: start pseudo hdfs
+
+- name: stop hdfs
+  action: shell {{ hadoop_home }}/bin/hdfs --daemon stop namenode
+  listen: restart hdfs
+  ignore_errors: yes
+
+- name: start hdfs
+  action: shell {{ hadoop_home }}/bin/hdfs --daemon start namenode
+  listen: restart hdfs

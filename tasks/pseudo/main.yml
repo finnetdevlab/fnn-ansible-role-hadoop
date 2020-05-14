@@ -1,0 +1,25 @@
+---
+- name: set core-site.xml variables
+  set_fact:
+    core_props:
+      fs.default.name: hdfs://localhost:9000
+    hdfs_props: 
+      dfs.replication: 1
+
+- name: create file core-site.xml
+  template:
+    src: core-site.xml.j2
+    dest: "{{ hadoop_home }}/etc/hadoop/core-site.xml"
+  notify:
+    - stop pseudo hdfs
+    - format hdfs
+    - start pseudo hdfs
+
+- name: create file hdfs-site.xml
+  template:
+    src: hdfs-site.xml.j2
+    dest: "{{ hadoop_home }}/etc/hadoop/hdfs-site.xml"
+  notify:
+    - stop pseudo hdfs
+    - format hdfs
+    - start pseudo hdfs

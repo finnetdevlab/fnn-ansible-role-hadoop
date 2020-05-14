@@ -1,2 +1,40 @@
 ---
-# tasks file for fnn-ansible-role-hadoop
+- name: gather os specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution|lower }}{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_distribution|lower }}.yml"
+  tags: vars
+
+- name: create hdfs user
+  user:
+    name: hdfs
+  register: hadoop_user
+
+# - name: ensure utility_packages is defined for os
+#   fail:
+#     msg: >
+#       Utility packages are not defined!
+#       Probably the os you are trying to install hadoop on is not supported by this role
+#       right now. Please ensure that os distribution is defined in vars/ folder.
+#   when: utility_packages is not defined
+
+# - name: install utility packages
+#   package:
+#     name: "{{ utility_packages|list }}"
+#     state: present
+#   tags: packages
+
+- name: check if apache hadoop exists
+  stat:
+    path: /opt/hadoop
+  register: hadoop_dir
+
+- name: install apache hadoop if not installed
+  include: install.yml
+  when: not hadoop_dir.stat.exists
+
+# Standalone mode is already satisfied
+- name: configure hadoop {{ hadoop_mode }}
+  include: "{{ hadoop_mode }}/main.yml"
+  when: hadoop_mode != 'standalone'

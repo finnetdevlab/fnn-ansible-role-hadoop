@@ -1,2 +1,4 @@
 ---
-# defaults file for fnn-ansible-role-hadoop
+hadoop_version: 3.2.1
+hadoop_home: /opt/hadoop
+hadoop_mode: pseudo
